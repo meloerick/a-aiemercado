@@ -1,10 +1,6 @@
-const WHATSAPP_NUMBER = "555185868972";
 const PIX_KEY = "58137537000188";
-const STORE_HOURS = {
-  open: "08:30",
-  close: "19:30"
-};
-
+const STORE_HOURS = { open: "08:30", close: "19:30" };
+const WHATSAPP_NUMBER = "555185868972";
 
 const DATA = {
   categories: [
@@ -174,7 +170,7 @@ const DATA = {
     { name: "Creme de ninho", price: 3 },
     { name: "Creme de maracujá", price: 3 }
   ],
-  pastelFlavors: ["Queijo", "Frango", "Calabresa", "Pizza", "Carne", "Chocolate", "Romeu e Julieta"]
+  pastelFlavors: ["Queijo", "Frango", "Calabresa", "Carne", "Chocolate"]
 };
 
 const state = {
@@ -223,13 +219,7 @@ function isStoreOpen(now = new Date()) {
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const openMinutes = minutesFromTimeString(STORE_HOURS.open);
   const closeMinutes = minutesFromTimeString(STORE_HOURS.close);
-
-  if (openMinutes === closeMinutes) return true;
-  if (openMinutes < closeMinutes) {
-    return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
-  }
-
-  return currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
+  return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
 }
 
 function getClosedMessage() {
@@ -241,7 +231,6 @@ function syncStoreInfo() {
   elements.storeHoursTexts.forEach((element) => {
     element.textContent = hoursText;
   });
-
   if (elements.storeStatusText) {
     elements.storeStatusText.textContent = isStoreOpen() ? "Aberto agora" : "Fechado no momento";
   }
@@ -276,10 +265,9 @@ function renderProducts() {
   const visibleProducts = DATA.products.filter((product) => product.category === state.activeCategory);
   const storeOpen = isStoreOpen();
 
-  elements.products.innerHTML = visibleProducts.length
-    ? visibleProducts
-        .map(
-          (product) => `
+  elements.products.innerHTML = visibleProducts
+    .map(
+      (product) => `
         <article class="product-card">
           <img class="product-card__image" src="${product.image}" alt="${escapeHtml(product.title)}" />
           <div class="product-card__body">
@@ -294,9 +282,8 @@ function renderProducts() {
           </div>
         </article>
       `
-        )
-        .join("")
-    : `<div class="empty-state">Nenhum item encontrado nesta categoria.</div>`;
+    )
+    .join("");
 }
 
 
@@ -364,18 +351,45 @@ function getModalTotals() {
   }
 
   if (product.type === "acai") {
-    freeExtrasTotal = Math.max(0, state.modal.free.length - product.config.freeIncluded) * 2;
-    paidExtrasTotal = state.modal.paid.reduce((sum, name) => {
-      const match = DATA.acaiPaidOptions.find((option) => option.name === name);
-      return sum + (match?.price || 0);
-    }, 0);
+    const freeExtraCount = Math.max(0, state.modal.free.length - product.config.freeIncluded);
+    sections = `
+      <section class="modal-section">
+        <h3>Complementos grátis (${state.modal.free.length}/${product.config.freeIncluded} inclusos)</h3>
+        <p>Extras além do limite incluso custam ${formatCurrency(2)} cada.</p>
+        <div class="choice-grid">
+          ${renderChoiceButtons(DATA.acaiFreeOptions, state.modal.free, "free")}
+        </div>
+        <div class="counter-text">${
+          freeExtraCount > 0
+            ? `${freeExtraCount} extra(s) cobrados acima do limite incluso.`
+            : "Você ainda está dentro do limite grátis."
+        }</div>
+      </section>
+
+      <section class="modal-section">
+        <h3>Complementos pagos</h3>
+        <p>Escolha até ${product.config.paidLimit} opções.</p>
+        <div class="choice-grid">
+          ${renderChoiceButtons(DATA.acaiPaidOptions, state.modal.paid, "paid", true)}
+        </div>
+        <div class="counter-text">Selecionados: ${state.modal.paid.length}/${product.config.paidLimit}</div>
+      </section>
+
+      <section class="modal-section">
+        <h3>Colher obrigatória</h3>
+        <p>Escolha 1 opção. Obrigatório.</p>
+        <div class="choice-grid">
+          ${renderChoiceButtons(["Sim", "Não"], state.modal.discard ? [state.modal.discard] : [], "discard")}
+        </div>
+      </section>
+    `;
   }
 
   const total = product.price + freeExtrasTotal + paidExtrasTotal;
   return { paidExtrasTotal, freeExtrasTotal, total };
 }
 
-function renderCustomizer(preservedScrollTop = null) {
+function renderCustomizer() {
   const product = state.currentProduct;
   if (!product) return;
 
@@ -429,11 +443,19 @@ function renderCustomizer(preservedScrollTop = null) {
 
       <section class="modal-section">
         <h3>Complementos pagos</h3>
-        <p>Escolha até ${product.config.paidLimit} opções pagas.</p>
+        <p>Escolha até ${product.config.paidLimit} opções.</p>
         <div class="choice-grid">
           ${renderChoiceButtons(DATA.acaiPaidOptions, state.modal.paid, "paid", true)}
         </div>
         <div class="counter-text">Selecionados: ${state.modal.paid.length}/${product.config.paidLimit}</div>
+      </section>
+
+      <section class="modal-section">
+        <h3>Colher obrigatória</h3>
+        <p>Escolha 1 opção. Obrigatório.</p>
+        <div class="choice-grid">
+          ${renderChoiceButtons(["Sim", "Não"], state.modal.discard ? [state.modal.discard] : [], "discard")}
+        </div>
       </section>
     `;
   }
@@ -481,20 +503,15 @@ function renderCustomizer(preservedScrollTop = null) {
       <button class="btn btn--primary" type="button" id="addToCartBtn">Adicionar ao carrinho</button>
     </div>
   `;
-
-  if (preservedScrollTop !== null) {
-    const scrollContainer = elements.customizerContent.querySelector(".customizer-scroll");
-    if (scrollContainer) {
-      scrollContainer.scrollTop = preservedScrollTop;
-    }
-  }
 }
 
 function toggleSelection(group, value) {
   const product = state.currentProduct;
   if (!product) return;
 
-  const currentScrollTop = elements.customizerContent.querySelector(".customizer-scroll")?.scrollTop ?? null;
+  const scrollContainer = document.querySelector(".customizer-scroll");
+  const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
+
   const currentNotes = document.getElementById("itemNotes");
   if (currentNotes) {
     state.modal.notes = currentNotes.value;
@@ -518,15 +535,24 @@ function toggleSelection(group, value) {
   }
 
   if (group === "paid") {
-    const exists = state.modal.paid.includes(value);
-    const paidLimit = product.config?.paidLimit;
-
-    if (exists) {
-      state.modal.paid = state.modal.paid.filter((item) => item !== value);
-    } else if (!paidLimit || state.modal.paid.length < paidLimit) {
-      state.modal.paid = [...state.modal.paid, value];
+    if (product.type === "garrafa") {
+      const exists = state.modal.paid.includes(value);
+      if (exists) {
+        state.modal.paid = state.modal.paid.filter((item) => item !== value);
+      } else if (state.modal.paid.length < product.config.paidLimit) {
+        state.modal.paid = [...state.modal.paid, value];
+      } else {
+        showToast(`Você pode escolher até ${product.config.paidLimit} complementos pagos.`);
+      }
     } else {
-      showToast(`Você pode escolher até ${paidLimit} complementos pagos.`);
+      const exists = state.modal.paid.includes(value);
+      if (exists) {
+        state.modal.paid = state.modal.paid.filter((item) => item !== value);
+      } else if (state.modal.paid.length < product.config.paidLimit) {
+        state.modal.paid = [...state.modal.paid, value];
+      } else {
+        showToast(`Você pode escolher até ${product.config.paidLimit} complementos pagos.`);
+      }
     }
   }
 
@@ -538,7 +564,12 @@ function toggleSelection(group, value) {
     state.modal.flavor = state.modal.flavor === value ? "" : value;
   }
 
-  renderCustomizer(currentScrollTop);
+  renderCustomizer();
+
+  requestAnimationFrame(() => {
+    const updatedScrollContainer = document.querySelector(".customizer-scroll");
+    if (updatedScrollContainer) updatedScrollContainer.scrollTop = currentScroll;
+  });
 }
 
 function addCurrentItemToCart() {
@@ -547,7 +578,7 @@ function addCurrentItemToCart() {
 
   state.modal.notes = document.getElementById("itemNotes")?.value.trim() || "";
 
-  if (product.type === "garrafa" && !state.modal.discard) {
+  if ((product.type === "garrafa" || product.type === "acai") && !state.modal.discard) {
     showToast("Escolha se deseja enviar colher antes de adicionar ao carrinho.");
     return;
   }
@@ -602,11 +633,6 @@ function updateCartBar() {
 }
 
 function openCheckout() {
-  if (!isStoreOpen()) {
-    showToast(getClosedMessage());
-    return;
-  }
-
   if (!state.cart.length) {
     showToast("Seu carrinho está vazio.");
     return;
@@ -659,28 +685,48 @@ function buildWhatsAppMessage(formData) {
   const itemsText = state.cart
     .map((item, index) => {
       const details = describeCartItem(item);
-      return `${index + 1}. ${item.title} - ${formatCurrency(item.total)}${details.length ? `\n   ${details.join("\n   ")}` : ""}`;
+      const detailsText = details.length ? "\n   " + details.join("\n   ") : "";
+      return `${index + 1}. ${item.title} - ${formatCurrency(item.total)}${detailsText}`;
     })
     .join("\n\n");
 
-  const observacoes = formData.get("observacoes") ? `Observações do pedido: ${formData.get("observacoes")}` : "Observações do pedido: nenhuma";
-  const pagamento = formData.get("pagamento") || "Pix";
   const pixText = `Pague para este Pix: ${PIX_KEY}`;
+  const observacoes = formData.get("observacoes")
+    ? `Observações do pedido: ${formData.get("observacoes")}`
+    : "Observações do pedido: nenhuma";
 
-  const rawMessage = `Olá, Cantinho do Açaí! Gostaria de fazer um pedido:\n\nCliente: ${formData.get("nome")}\nTelefone: ${formData.get("telefone")}\nEndereço de entrega: ${formData.get("endereco")}, ${formData.get("numero")}\nComplemento: ${formData.get("complemento") || "sem complemento"}\nBairro: ${formData.get("bairro")}\nReferência: ${formData.get("referencia") || "sem referência"}\nForma de pagamento: ${pagamento}\n${pixText}\n${observacoes}\n\nItens do pedido:\n${itemsText}\n\nTotal: ${formatCurrency(getCartTotal())}`;
+  const rawMessage = [
+    "Olá, Cantinho do Açaí! Gostaria de fazer um pedido:",
+    "",
+    `Cliente: ${formData.get("nome")}`,
+    `Telefone: ${formData.get("telefone")}`,
+    `Endereço de entrega: ${formData.get("endereco")}, ${formData.get("numero")}`,
+    `Complemento: ${formData.get("complemento") || "sem complemento"}`,
+    `Bairro: ${formData.get("bairro")}`,
+    `Referência: ${formData.get("referencia") || "sem referência"}`,
+    `Forma de pagamento: ${formData.get("pagamento")}`,
+    pixText,
+    observacoes,
+    "",
+    "Itens do pedido:",
+    itemsText,
+    "",
+    `Total: ${formatCurrency(getCartTotal())}`
+  ].join("\n");
 
   return encodeURIComponent(rawMessage);
 }
+
 function handleCheckoutSubmit(event) {
   event.preventDefault();
 
-  if (!isStoreOpen()) {
-    showToast(getClosedMessage());
+  if (!state.cart.length) {
+    showToast("Seu carrinho está vazio.");
     return;
   }
 
-  if (!state.cart.length) {
-    showToast("Seu carrinho está vazio.");
+  if (!isStoreOpen()) {
+    showToast(getClosedMessage());
     return;
   }
 
