@@ -1,4 +1,10 @@
 const WHATSAPP_NUMBER = "555185868972";
+const PIX_KEY = "58137537000188";
+const STORE_HOURS = {
+  open: "08:30",
+  close: "19:30"
+};
+
 
 const DATA = {
   categories: [
@@ -13,7 +19,7 @@ const DATA = {
       title: "Açaí na Garrafa - 300ml",
       description: "Açaí cremoso, geladinho e pronto para beber.",
       price: 20,
-      image: "garrafa.png",
+      image: "assets/garrafa.png",
       buttonLabel: "Personalizar",
       type: "garrafa",
       config: {
@@ -56,7 +62,7 @@ const DATA = {
       title: "Açaí na Garrafa - 500ml",
       description: "Versão econômica para compartilhar.",
       price: 30,
-      image: "garrafa.png",
+      image: "assets/garrafa.png",
       buttonLabel: "Personalizar",
       type: "garrafa",
       config: {
@@ -99,7 +105,7 @@ const DATA = {
       title: "Açaí Tradicional - 200ml",
       description: "2 adicionais grátis incluídos.",
       price: 13,
-      image: "copo.png",
+      image: "assets/copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
       config: { freeIncluded: 2 }
@@ -110,7 +116,7 @@ const DATA = {
       title: "Açaí Tradicional - 300ml",
       description: "3 adicionais grátis incluídos.",
       price: 15,
-      image: "copo.png",
+      image: "assets/copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
       config: { freeIncluded: 3 }
@@ -121,7 +127,7 @@ const DATA = {
       title: "Açaí Tradicional - 500ml",
       description: "3 adicionais grátis incluídos.",
       price: 20,
-      image: "copo.png",
+      image: "assets/copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
       config: { freeIncluded: 3 }
@@ -132,7 +138,7 @@ const DATA = {
       title: "Açaí Tradicional - 700ml",
       description: "4 adicionais grátis incluídos.",
       price: 30,
-      image: "copo.png",
+      image: "assets/copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
       config: { freeIncluded: 4 }
@@ -143,7 +149,7 @@ const DATA = {
       title: "Pastel",
       description: "Serve 1 pessoa. Escolha o sabor no momento do pedido.",
       price: 12,
-      image: "pastel.png",
+      image: "assets/pastel.png",
       buttonLabel: "Personalizar",
       type: "pastel"
     }
@@ -195,11 +201,50 @@ const elements = {
   cartBarText: document.getElementById("cartBarText"),
   openCheckoutBtn: document.getElementById("openCheckoutBtn"),
   checkoutForm: document.getElementById("checkoutForm"),
+  storeStatusText: document.getElementById("storeStatusText"),
+  storeHoursTexts: document.querySelectorAll(".js-store-hours"),
   toast: document.getElementById("toast")
 };
 
 function formatCurrency(value) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function getStoreHoursText() {
+  return `${STORE_HOURS.open} às ${STORE_HOURS.close}`;
+}
+
+function minutesFromTimeString(time) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function isStoreOpen(now = new Date()) {
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const openMinutes = minutesFromTimeString(STORE_HOURS.open);
+  const closeMinutes = minutesFromTimeString(STORE_HOURS.close);
+
+  if (openMinutes === closeMinutes) return true;
+  if (openMinutes < closeMinutes) {
+    return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
+  }
+
+  return currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
+}
+
+function getClosedMessage() {
+  return `Fora do horário de atendimento. Pedidos somente das ${getStoreHoursText()}.`;
+}
+
+function syncStoreInfo() {
+  const hoursText = getStoreHoursText();
+  elements.storeHoursTexts.forEach((element) => {
+    element.textContent = hoursText;
+  });
+
+  if (elements.storeStatusText) {
+    elements.storeStatusText.textContent = isStoreOpen() ? "Aberto agora" : "Fechado no momento";
+  }
 }
 
 function escapeHtml(value) {
@@ -229,6 +274,7 @@ function renderTabs() {
 
 function renderProducts() {
   const visibleProducts = DATA.products.filter((product) => product.category === state.activeCategory);
+  const storeOpen = isStoreOpen();
 
   elements.products.innerHTML = visibleProducts
     .map(
@@ -240,8 +286,8 @@ function renderProducts() {
             <p>${escapeHtml(product.description)}</p>
             <div class="product-card__price">${formatCurrency(product.price)}</div>
             <div class="product-card__actions">
-              <button class="product-card__btn" type="button" data-product-id="${product.id}">
-                ${product.buttonLabel}
+              <button class="product-card__btn ${storeOpen ? "" : "is-disabled"}" type="button" data-product-id="${product.id}" ${storeOpen ? "" : "disabled"}>
+                ${storeOpen ? product.buttonLabel : "Fora do horário"}
               </button>
             </div>
           </div>
@@ -252,6 +298,11 @@ function renderProducts() {
 }
 
 function openCustomizer(productId) {
+  if (!isStoreOpen()) {
+    showToast(getClosedMessage());
+    return;
+  }
+
   const product = DATA.products.find((item) => item.id === productId);
   if (!product) return;
 
@@ -321,13 +372,9 @@ function getModalTotals() {
   return { paidExtrasTotal, freeExtrasTotal, total };
 }
 
-function renderCustomizer(preserveScroll = false) {
+function renderCustomizer() {
   const product = state.currentProduct;
   if (!product) return;
-
-  const previousScroll = preserveScroll
-    ? elements.customizerContent.querySelector(".customizer-scroll")?.scrollTop || 0
-    : 0;
 
   const totals = getModalTotals();
 
@@ -429,15 +476,6 @@ function renderCustomizer(preserveScroll = false) {
       <button class="btn btn--primary" type="button" id="addToCartBtn">Adicionar ao carrinho</button>
     </div>
   `;
-
-  if (preserveScroll) {
-    requestAnimationFrame(() => {
-      const nextScrollContainer = elements.customizerContent.querySelector(".customizer-scroll");
-      if (nextScrollContainer) {
-        nextScrollContainer.scrollTop = previousScroll;
-      }
-    });
-  }
 }
 
 function toggleSelection(group, value) {
@@ -491,7 +529,7 @@ function toggleSelection(group, value) {
     state.modal.flavor = state.modal.flavor === value ? "" : value;
   }
 
-  renderCustomizer(true);
+  renderCustomizer();
 }
 
 function addCurrentItemToCart() {
@@ -555,6 +593,11 @@ function updateCartBar() {
 }
 
 function openCheckout() {
+  if (!isStoreOpen()) {
+    showToast(getClosedMessage());
+    return;
+  }
+
   if (!state.cart.length) {
     showToast("Seu carrinho está vazio.");
     return;
@@ -607,20 +650,43 @@ function buildWhatsAppMessage(formData) {
   const itemsText = state.cart
     .map((item, index) => {
       const details = describeCartItem(item);
-      return `${index + 1}. ${item.title} - ${formatCurrency(item.total)}${details.length ? `\n   ${details.join("\n   ")}` : ""}`;
+      return `${index + 1}. ${item.title} - ${formatCurrency(item.total)}${details.length ? `
+   ${details.join("
+   ")}` : ""}`;
     })
-    .join("\n\n");
+    .join("
 
-  const trocoText = formData.get("troco") ? `Troco para: ${formData.get("troco")}` : "Troco para: não informado";
+");
+
   const observacoes = formData.get("observacoes") ? `Observações do pedido: ${formData.get("observacoes")}` : "Observações do pedido: nenhuma";
 
-  const rawMessage = `Olá, Cantinho do Açaí! Gostaria de fazer um pedido:\n\nCliente: ${formData.get("nome")}\nTelefone: ${formData.get("telefone")}\nEndereço de entrega: ${formData.get("endereco")}, ${formData.get("numero")}\nComplemento: ${formData.get("complemento") || "sem complemento"}\nBairro: ${formData.get("bairro")}\nReferência: ${formData.get("referencia") || "sem referência"}\nForma de pagamento: ${formData.get("pagamento")}\n${trocoText}\n${observacoes}\n\nItens do pedido:\n${itemsText}\n\nTotal: ${formatCurrency(getCartTotal())}`;
+  const rawMessage = `Olá, Cantinho do Açaí! Gostaria de fazer um pedido:
+
+Cliente: ${formData.get("nome")}
+Telefone: ${formData.get("telefone")}
+Endereço de entrega: ${formData.get("endereco")}, ${formData.get("numero")}
+Complemento: ${formData.get("complemento") || "sem complemento"}
+Bairro: ${formData.get("bairro")}
+Referência: ${formData.get("referencia") || "sem referência"}
+Forma de pagamento: Pix
+Pague para este Pix: ${PIX_KEY}
+${observacoes}
+
+Itens do pedido:
+${itemsText}
+
+Total: ${formatCurrency(getCartTotal())}`;
 
   return encodeURIComponent(rawMessage);
 }
 
 function handleCheckoutSubmit(event) {
   event.preventDefault();
+
+  if (!isStoreOpen()) {
+    showToast(getClosedMessage());
+    return;
+  }
 
   if (!state.cart.length) {
     showToast("Seu carrinho está vazio.");
@@ -705,6 +771,7 @@ function bindEvents() {
 }
 
 function init() {
+  syncStoreInfo();
   renderTabs();
   renderProducts();
   updateCartBar();

@@ -14,10 +14,7 @@ ARQUIVOS
 - index.html
 - styles.css
 - script.js
-- logo.png
-- copo.png
-- garrafa.png
-- pastel.png
+- assets/
 
 WHATSAPP CONFIGURADO
 - 55 51 8586-8972
