@@ -22,7 +22,7 @@
         <div class="hero__glow"></div>
         <div class="hero__content container">
           <div class="hero__top">
-            <img src="assets/logo.png" alt="Logo Cantinho do Açaí" class="hero__logo" />
+            <img src="logo.png" alt="Logo Cantinho do Açaí" class="hero__logo" />
             <span class="hero__badge">Delivery Premium em Canoas</span>
           </div>
 
@@ -44,11 +44,7 @@
             <aside class="hero__info">
               <article class="info-card">
                 <span class="info-card__label">Horário de funcionamento</span>
-                <strong class="js-store-hours">08:30 às 19:30</strong>
-              </article>
-              <article class="info-card info-card--status">
-                <span class="info-card__label">Status do delivery</span>
-                <strong id="storeStatusText">Aberto agora</strong>
+                <strong>08:30 às 19:30</strong>
               </article>
               <article class="info-card">
                 <span class="info-card__label">WhatsApp</span>
@@ -126,7 +122,7 @@
           </div>
           <div>
             <h4>Funcionamento</h4>
-            <p>Todos os dias: <span class="js-store-hours">08:30 às 19:30</span></p>
+            <p>Todos os dias: 08:30 às 19:30</p>
           </div>
         </div>
       </footer>
@@ -192,19 +188,16 @@
               <div class="field-grid field-grid--2">
                 <label class="field">
                   <span>Forma de pagamento*</span>
-                  <input type="text" value="Pix" readonly />
-                  <input type="hidden" name="pagamento" value="Pix" />
+                  <select name="pagamento" required>
+                    <option value="Pix" selected>Pix</option>
+                  </select>
                 </label>
                 <label class="field">
                   <span>Chave Pix</span>
                   <input type="text" value="58137537000188" readonly />
                 </label>
               </div>
-
-              <div class="pix-notice">
-                <strong>Pague para este Pix:</strong>
-                <span>58137537000188</span>
-              </div>
+              <p class="pix-note">Pague para este Pix: <strong>58137537000188</strong></p>
 
               <label class="field">
                 <span>Observações do pedido</span>

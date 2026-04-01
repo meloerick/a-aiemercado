@@ -19,7 +19,7 @@ const DATA = {
       title: "Açaí na Garrafa - 300ml",
       description: "Açaí cremoso, geladinho e pronto para beber.",
       price: 20,
-      image: "assets/garrafa.png",
+      image: "garrafa.png",
       buttonLabel: "Personalizar",
       type: "garrafa",
       config: {
@@ -62,7 +62,7 @@ const DATA = {
       title: "Açaí na Garrafa - 500ml",
       description: "Versão econômica para compartilhar.",
       price: 30,
-      image: "assets/garrafa.png",
+      image: "garrafa.png",
       buttonLabel: "Personalizar",
       type: "garrafa",
       config: {
@@ -105,10 +105,10 @@ const DATA = {
       title: "Açaí Tradicional - 200ml",
       description: "2 adicionais grátis incluídos.",
       price: 13,
-      image: "assets/copo.png",
+      image: "copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
-      config: { freeIncluded: 2 }
+      config: { freeIncluded: 2, paidLimit: 4 }
     },
     {
       id: "acai-300",
@@ -116,10 +116,10 @@ const DATA = {
       title: "Açaí Tradicional - 300ml",
       description: "3 adicionais grátis incluídos.",
       price: 15,
-      image: "assets/copo.png",
+      image: "copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
-      config: { freeIncluded: 3 }
+      config: { freeIncluded: 3, paidLimit: 4 }
     },
     {
       id: "acai-500",
@@ -127,10 +127,10 @@ const DATA = {
       title: "Açaí Tradicional - 500ml",
       description: "3 adicionais grátis incluídos.",
       price: 20,
-      image: "assets/copo.png",
+      image: "copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
-      config: { freeIncluded: 3 }
+      config: { freeIncluded: 3, paidLimit: 4 }
     },
     {
       id: "acai-700",
@@ -138,10 +138,10 @@ const DATA = {
       title: "Açaí Tradicional - 700ml",
       description: "4 adicionais grátis incluídos.",
       price: 30,
-      image: "assets/copo.png",
+      image: "copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
-      config: { freeIncluded: 4 }
+      config: { freeIncluded: 4, paidLimit: 4 }
     },
     {
       id: "pastel",
@@ -149,7 +149,7 @@ const DATA = {
       title: "Pastel",
       description: "Serve 1 pessoa. Escolha o sabor no momento do pedido.",
       price: 12,
-      image: "assets/pastel.png",
+      image: "pastel.png",
       buttonLabel: "Personalizar",
       type: "pastel"
     }
@@ -276,9 +276,10 @@ function renderProducts() {
   const visibleProducts = DATA.products.filter((product) => product.category === state.activeCategory);
   const storeOpen = isStoreOpen();
 
-  elements.products.innerHTML = visibleProducts
-    .map(
-      (product) => `
+  elements.products.innerHTML = visibleProducts.length
+    ? visibleProducts
+        .map(
+          (product) => `
         <article class="product-card">
           <img class="product-card__image" src="${product.image}" alt="${escapeHtml(product.title)}" />
           <div class="product-card__body">
@@ -293,9 +294,11 @@ function renderProducts() {
           </div>
         </article>
       `
-    )
-    .join("");
+        )
+        .join("")
+    : `<div class="empty-state">Nenhum item encontrado nesta categoria.</div>`;
 }
+
 
 function openCustomizer(productId) {
   if (!isStoreOpen()) {
@@ -426,9 +429,11 @@ function renderCustomizer() {
 
       <section class="modal-section">
         <h3>Complementos pagos</h3>
+        <p>Escolha até ${product.config.paidLimit} opções pagas.</p>
         <div class="choice-grid">
           ${renderChoiceButtons(DATA.acaiPaidOptions, state.modal.paid, "paid", true)}
         </div>
+        <div class="counter-text">Selecionados: ${state.modal.paid.length}/${product.config.paidLimit}</div>
       </section>
     `;
   }
@@ -505,19 +510,15 @@ function toggleSelection(group, value) {
   }
 
   if (group === "paid") {
-    if (product.type === "garrafa") {
-      const exists = state.modal.paid.includes(value);
-      if (exists) {
-        state.modal.paid = state.modal.paid.filter((item) => item !== value);
-      } else if (state.modal.paid.length < product.config.paidLimit) {
-        state.modal.paid = [...state.modal.paid, value];
-      } else {
-        showToast(`Você pode escolher até ${product.config.paidLimit} complementos pagos.`);
-      }
+    const exists = state.modal.paid.includes(value);
+    const paidLimit = product.config?.paidLimit;
+
+    if (exists) {
+      state.modal.paid = state.modal.paid.filter((item) => item !== value);
+    } else if (!paidLimit || state.modal.paid.length < paidLimit) {
+      state.modal.paid = [...state.modal.paid, value];
     } else {
-      state.modal.paid = state.modal.paid.includes(value)
-        ? state.modal.paid.filter((item) => item !== value)
-        : [...state.modal.paid, value];
+      showToast(`Você pode escolher até ${paidLimit} complementos pagos.`);
     }
   }
 
@@ -650,36 +651,18 @@ function buildWhatsAppMessage(formData) {
   const itemsText = state.cart
     .map((item, index) => {
       const details = describeCartItem(item);
-      return `${index + 1}. ${item.title} - ${formatCurrency(item.total)}${details.length ? `
-   ${details.join("
-   ")}` : ""}`;
+      return `${index + 1}. ${item.title} - ${formatCurrency(item.total)}${details.length ? `\n   ${details.join("\n   ")}` : ""}`;
     })
-    .join("
-
-");
+    .join("\n\n");
 
   const observacoes = formData.get("observacoes") ? `Observações do pedido: ${formData.get("observacoes")}` : "Observações do pedido: nenhuma";
+  const pagamento = formData.get("pagamento") || "Pix";
+  const pixText = `Pague para este Pix: ${PIX_KEY}`;
 
-  const rawMessage = `Olá, Cantinho do Açaí! Gostaria de fazer um pedido:
-
-Cliente: ${formData.get("nome")}
-Telefone: ${formData.get("telefone")}
-Endereço de entrega: ${formData.get("endereco")}, ${formData.get("numero")}
-Complemento: ${formData.get("complemento") || "sem complemento"}
-Bairro: ${formData.get("bairro")}
-Referência: ${formData.get("referencia") || "sem referência"}
-Forma de pagamento: Pix
-Pague para este Pix: ${PIX_KEY}
-${observacoes}
-
-Itens do pedido:
-${itemsText}
-
-Total: ${formatCurrency(getCartTotal())}`;
+  const rawMessage = `Olá, Cantinho do Açaí! Gostaria de fazer um pedido:\n\nCliente: ${formData.get("nome")}\nTelefone: ${formData.get("telefone")}\nEndereço de entrega: ${formData.get("endereco")}, ${formData.get("numero")}\nComplemento: ${formData.get("complemento") || "sem complemento"}\nBairro: ${formData.get("bairro")}\nReferência: ${formData.get("referencia") || "sem referência"}\nForma de pagamento: ${pagamento}\n${pixText}\n${observacoes}\n\nItens do pedido:\n${itemsText}\n\nTotal: ${formatCurrency(getCartTotal())}`;
 
   return encodeURIComponent(rawMessage);
 }
-
 function handleCheckoutSubmit(event) {
   event.preventDefault();
 
