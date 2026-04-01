@@ -108,7 +108,7 @@ const DATA = {
       image: "copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
-      config: { freeIncluded: 2 }
+      config: { freeIncluded: 2, paidLimit: 4 }
     },
     {
       id: "acai-300",
@@ -119,7 +119,7 @@ const DATA = {
       image: "copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
-      config: { freeIncluded: 3 }
+      config: { freeIncluded: 3, paidLimit: 4 }
     },
     {
       id: "acai-500",
@@ -130,7 +130,7 @@ const DATA = {
       image: "copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
-      config: { freeIncluded: 3 }
+      config: { freeIncluded: 3, paidLimit: 4 }
     },
     {
       id: "acai-700",
@@ -141,7 +141,7 @@ const DATA = {
       image: "copo.png",
       buttonLabel: "Escolher complementos",
       type: "acai",
-      config: { freeIncluded: 4 }
+      config: { freeIncluded: 4, paidLimit: 4 }
     },
     {
       id: "pastel",
@@ -375,7 +375,7 @@ function getModalTotals() {
   return { paidExtrasTotal, freeExtrasTotal, total };
 }
 
-function renderCustomizer() {
+function renderCustomizer(preservedScrollTop = null) {
   const product = state.currentProduct;
   if (!product) return;
 
@@ -429,9 +429,11 @@ function renderCustomizer() {
 
       <section class="modal-section">
         <h3>Complementos pagos</h3>
+        <p>Escolha até ${product.config.paidLimit} opções pagas.</p>
         <div class="choice-grid">
           ${renderChoiceButtons(DATA.acaiPaidOptions, state.modal.paid, "paid", true)}
         </div>
+        <div class="counter-text">Selecionados: ${state.modal.paid.length}/${product.config.paidLimit}</div>
       </section>
     `;
   }
@@ -479,12 +481,20 @@ function renderCustomizer() {
       <button class="btn btn--primary" type="button" id="addToCartBtn">Adicionar ao carrinho</button>
     </div>
   `;
+
+  if (preservedScrollTop !== null) {
+    const scrollContainer = elements.customizerContent.querySelector(".customizer-scroll");
+    if (scrollContainer) {
+      scrollContainer.scrollTop = preservedScrollTop;
+    }
+  }
 }
 
 function toggleSelection(group, value) {
   const product = state.currentProduct;
   if (!product) return;
 
+  const currentScrollTop = elements.customizerContent.querySelector(".customizer-scroll")?.scrollTop ?? null;
   const currentNotes = document.getElementById("itemNotes");
   if (currentNotes) {
     state.modal.notes = currentNotes.value;
@@ -508,19 +518,15 @@ function toggleSelection(group, value) {
   }
 
   if (group === "paid") {
-    if (product.type === "garrafa") {
-      const exists = state.modal.paid.includes(value);
-      if (exists) {
-        state.modal.paid = state.modal.paid.filter((item) => item !== value);
-      } else if (state.modal.paid.length < product.config.paidLimit) {
-        state.modal.paid = [...state.modal.paid, value];
-      } else {
-        showToast(`Você pode escolher até ${product.config.paidLimit} complementos pagos.`);
-      }
+    const exists = state.modal.paid.includes(value);
+    const paidLimit = product.config?.paidLimit;
+
+    if (exists) {
+      state.modal.paid = state.modal.paid.filter((item) => item !== value);
+    } else if (!paidLimit || state.modal.paid.length < paidLimit) {
+      state.modal.paid = [...state.modal.paid, value];
     } else {
-      state.modal.paid = state.modal.paid.includes(value)
-        ? state.modal.paid.filter((item) => item !== value)
-        : [...state.modal.paid, value];
+      showToast(`Você pode escolher até ${paidLimit} complementos pagos.`);
     }
   }
 
@@ -532,7 +538,7 @@ function toggleSelection(group, value) {
     state.modal.flavor = state.modal.flavor === value ? "" : value;
   }
 
-  renderCustomizer();
+  renderCustomizer(currentScrollTop);
 }
 
 function addCurrentItemToCart() {
@@ -658,12 +664,13 @@ function buildWhatsAppMessage(formData) {
     .join("\n\n");
 
   const observacoes = formData.get("observacoes") ? `Observações do pedido: ${formData.get("observacoes")}` : "Observações do pedido: nenhuma";
+  const pagamento = formData.get("pagamento") || "Pix";
+  const pixText = `Pague para este Pix: ${PIX_KEY}`;
 
-  const rawMessage = `Olá, Cantinho do Açaí! Gostaria de fazer um pedido:\n\nCliente: ${formData.get("nome")}\nTelefone: ${formData.get("telefone")}\nEndereço de entrega: ${formData.get("endereco")}, ${formData.get("numero")}\nComplemento: ${formData.get("complemento") || "sem complemento"}\nBairro: ${formData.get("bairro")}\nReferência: ${formData.get("referencia") || "sem referência"}\nForma de pagamento: ${formData.get("pagamento")}\n${trocoText}\n${observacoes}\n\nItens do pedido:\n${itemsText}\n\nTotal: ${formatCurrency(getCartTotal())}`;
+  const rawMessage = `Olá, Cantinho do Açaí! Gostaria de fazer um pedido:\n\nCliente: ${formData.get("nome")}\nTelefone: ${formData.get("telefone")}\nEndereço de entrega: ${formData.get("endereco")}, ${formData.get("numero")}\nComplemento: ${formData.get("complemento") || "sem complemento"}\nBairro: ${formData.get("bairro")}\nReferência: ${formData.get("referencia") || "sem referência"}\nForma de pagamento: ${pagamento}\n${pixText}\n${observacoes}\n\nItens do pedido:\n${itemsText}\n\nTotal: ${formatCurrency(getCartTotal())}`;
 
   return encodeURIComponent(rawMessage);
 }
-
 function handleCheckoutSubmit(event) {
   event.preventDefault();
 
