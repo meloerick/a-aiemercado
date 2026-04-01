@@ -174,7 +174,7 @@ const DATA = {
     { name: "Creme de ninho", price: 3 },
     { name: "Creme de maracujá", price: 3 }
   ],
-  pastelFlavors: ["Queijo", "Frango", "Calabresa", "Pizza", "Carne", "Chocolate", "Romeu e Julieta"]
+  pastelFlavors: ["Queijo", "Frango", "Calabresa", "Carne", "Chocolate"]
 };
 
 const state = {
@@ -336,17 +336,29 @@ function renderChoiceButtons(options, selectedValues, group, priced = false) {
       const isSelected = selectedValues.includes(value);
       return `
         <button
-          class="choice-chip ${isSelected ? "is-selected" : ""}"
+          class="choice-chip ${priced ? "is-priced" : ""} ${isSelected ? "is-selected" : ""}"
           type="button"
           data-choice-group="${group}"
           data-choice-value="${escapeHtml(value)}"
           ${priced ? 'data-choice-priced="true"' : ""}
         >
-          ${escapeHtml(label)}
+          <span class="choice-chip__label">${escapeHtml(label)}</span>
+          <span class="choice-chip__check" aria-hidden="true">✓</span>
         </button>
       `;
     })
     .join("");
+}
+
+function getCustomizerScrollTop() {
+  return elements.customizerContent.querySelector(".customizer-scroll")?.scrollTop || 0;
+}
+
+function restoreCustomizerScrollTop(scrollTop) {
+  const scroller = elements.customizerContent.querySelector(".customizer-scroll");
+  if (scroller) {
+    scroller.scrollTop = scrollTop;
+  }
 }
 
 function getModalTotals() {
@@ -375,7 +387,7 @@ function getModalTotals() {
   return { paidExtrasTotal, freeExtrasTotal, total };
 }
 
-function renderCustomizer(preservedScrollTop = null) {
+function renderCustomizer() {
   const product = state.currentProduct;
   if (!product) return;
 
@@ -384,6 +396,9 @@ function renderCustomizer(preservedScrollTop = null) {
   let sections = "";
 
   if (product.type === "garrafa") {
+    const freeAtLimit = state.modal.free.length >= product.config.freeLimit;
+    const paidAtLimit = state.modal.paid.length >= product.config.paidLimit;
+
     sections = `
       <section class="modal-section">
         <h3>Complementos grátis</h3>
@@ -391,7 +406,11 @@ function renderCustomizer(preservedScrollTop = null) {
         <div class="choice-grid">
           ${renderChoiceButtons(product.config.freeOptions, state.modal.free, "free")}
         </div>
-        <div class="counter-text">Selecionados: ${state.modal.free.length}/${product.config.freeLimit}</div>
+        <div class="counter-text ${freeAtLimit ? "is-warning" : ""}">${
+          freeAtLimit
+            ? `Limite de ${product.config.freeLimit} complementos grátis atingido.`
+            : `Selecionados: ${state.modal.free.length}/${product.config.freeLimit}`
+        }</div>
       </section>
 
       <section class="modal-section">
@@ -400,14 +419,18 @@ function renderCustomizer(preservedScrollTop = null) {
         <div class="choice-grid">
           ${renderChoiceButtons(product.config.paidOptions, state.modal.paid, "paid", true)}
         </div>
-        <div class="counter-text">Selecionados: ${state.modal.paid.length}/${product.config.paidLimit}</div>
+        <div class="counter-text ${paidAtLimit ? "is-warning" : ""}">${
+          paidAtLimit
+            ? `Limite de ${product.config.paidLimit} complementos pagos atingido.`
+            : `Selecionados: ${state.modal.paid.length}/${product.config.paidLimit}`
+        }</div>
       </section>
 
       <section class="modal-section">
-        <h3>Deseja descartáveis?</h3>
+        <h3>Colher obrigatória</h3>
         <p>Escolha 1 opção. Obrigatório.</p>
         <div class="choice-grid">
-          ${renderChoiceButtons(["Sim, enviar colher", "Não precisa!"], state.modal.discard ? [state.modal.discard] : [], "discard")}
+          ${renderChoiceButtons(["Sim", "Não"], state.modal.discard ? [state.modal.discard] : [], "discard")}
         </div>
       </section>
     `;
@@ -415,6 +438,8 @@ function renderCustomizer(preservedScrollTop = null) {
 
   if (product.type === "acai") {
     const freeExtraCount = Math.max(0, state.modal.free.length - product.config.freeIncluded);
+    const paidAtLimit = state.modal.paid.length >= product.config.paidLimit;
+
     sections = `
       <section class="modal-section">
         <h3>Complementos grátis (${state.modal.free.length}/${product.config.freeIncluded} inclusos)</h3>
@@ -422,7 +447,7 @@ function renderCustomizer(preservedScrollTop = null) {
         <div class="choice-grid">
           ${renderChoiceButtons(DATA.acaiFreeOptions, state.modal.free, "free")}
         </div>
-        <div class="counter-text">${
+        <div class="counter-text ${freeExtraCount > 0 ? "is-warning" : ""}">${
           freeExtraCount > 0 ? `${freeExtraCount} extra(s) cobrados acima do limite incluso.` : "Você ainda está dentro do limite grátis."
         }</div>
       </section>
@@ -433,7 +458,19 @@ function renderCustomizer(preservedScrollTop = null) {
         <div class="choice-grid">
           ${renderChoiceButtons(DATA.acaiPaidOptions, state.modal.paid, "paid", true)}
         </div>
-        <div class="counter-text">Selecionados: ${state.modal.paid.length}/${product.config.paidLimit}</div>
+        <div class="counter-text ${paidAtLimit ? "is-warning" : ""}">${
+          paidAtLimit
+            ? `Limite de ${product.config.paidLimit} complementos pagos atingido.`
+            : `Selecionados: ${state.modal.paid.length}/${product.config.paidLimit}`
+        }</div>
+      </section>
+
+      <section class="modal-section">
+        <h3>Colher obrigatória</h3>
+        <p>Escolha 1 opção. Obrigatório.</p>
+        <div class="choice-grid">
+          ${renderChoiceButtons(["Sim", "Não"], state.modal.discard ? [state.modal.discard] : [], "discard")}
+        </div>
       </section>
     `;
   }
@@ -463,7 +500,7 @@ function renderCustomizer(preservedScrollTop = null) {
       <section class="modal-section">
         <h3>Algum comentário?</h3>
         <div class="field">
-          <textarea id="itemNotes" rows="4" placeholder="Ex: pouco leite condensado, sem colher, entregar rápido...">${escapeHtml(state.modal.notes)}</textarea>
+          <textarea id="itemNotes" rows="4" placeholder="Ex: pouco leite condensado, entregar rápido...">${escapeHtml(state.modal.notes)}</textarea>
         </div>
       </section>
 
@@ -481,20 +518,12 @@ function renderCustomizer(preservedScrollTop = null) {
       <button class="btn btn--primary" type="button" id="addToCartBtn">Adicionar ao carrinho</button>
     </div>
   `;
-
-  if (preservedScrollTop !== null) {
-    const scrollContainer = elements.customizerContent.querySelector(".customizer-scroll");
-    if (scrollContainer) {
-      scrollContainer.scrollTop = preservedScrollTop;
-    }
-  }
 }
 
 function toggleSelection(group, value) {
   const product = state.currentProduct;
   if (!product) return;
 
-  const currentScrollTop = elements.customizerContent.querySelector(".customizer-scroll")?.scrollTop ?? null;
   const currentNotes = document.getElementById("itemNotes");
   if (currentNotes) {
     state.modal.notes = currentNotes.value;
@@ -538,7 +567,9 @@ function toggleSelection(group, value) {
     state.modal.flavor = state.modal.flavor === value ? "" : value;
   }
 
-  renderCustomizer(currentScrollTop);
+  const currentScrollTop = getCustomizerScrollTop();
+  renderCustomizer();
+  restoreCustomizerScrollTop(currentScrollTop);
 }
 
 function addCurrentItemToCart() {
@@ -547,7 +578,7 @@ function addCurrentItemToCart() {
 
   state.modal.notes = document.getElementById("itemNotes")?.value.trim() || "";
 
-  if (product.type === "garrafa" && !state.modal.discard) {
+  if ((product.type === "garrafa" || product.type === "acai") && !state.modal.discard) {
     showToast("Escolha se deseja enviar colher antes de adicionar ao carrinho.");
     return;
   }
@@ -626,7 +657,7 @@ function describeCartItem(item) {
   if (item.flavor) details.push(`Sabor: ${item.flavor}`);
   if (item.freeSelections.length) details.push(`Grátis: ${item.freeSelections.join(", ")}`);
   if (item.paidSelections.length) details.push(`Pagos: ${item.paidSelections.join(", ")}`);
-  if (item.discard) details.push(`Descartáveis: ${item.discard}`);
+  if (item.discard) details.push(`Colher: ${item.discard}`);
   if (item.notes) details.push(`Obs: ${item.notes}`);
   return details;
 }

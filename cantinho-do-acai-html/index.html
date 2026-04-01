@@ -44,7 +44,7 @@
             <aside class="hero__info">
               <article class="info-card">
                 <span class="info-card__label">Horário de funcionamento</span>
-                <strong>08:30 às 19:30</strong>
+                <strong class="js-store-hours">08:30 às 19:30</strong>
               </article>
               <article class="info-card">
                 <span class="info-card__label">WhatsApp</span>
@@ -122,7 +122,7 @@
           </div>
           <div>
             <h4>Funcionamento</h4>
-            <p>Todos os dias: 08:30 às 19:30</p>
+            <p>Todos os dias: <span class="js-store-hours">08:30 às 19:30</span></p>
           </div>
         </div>
       </footer>
@@ -192,12 +192,11 @@
                     <option value="Pix" selected>Pix</option>
                   </select>
                 </label>
-                <label class="field">
-                  <span>Chave Pix</span>
-                  <input type="text" value="58137537000188" readonly />
-                </label>
+                <div class="pix-notice">
+                  <strong>Pague para este Pix</strong>
+                  <span>58137537000188</span>
+                </div>
               </div>
-              <p class="pix-note">Pague para este Pix: <strong>58137537000188</strong></p>
 
               <label class="field">
                 <span>Observações do pedido</span>

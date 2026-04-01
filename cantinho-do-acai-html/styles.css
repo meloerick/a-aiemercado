@@ -518,23 +518,96 @@ button {
 }
 
 .choice-chip {
-  min-height: 54px;
-  justify-content: flex-start;
+  position: relative;
+  min-height: 58px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   text-align: left;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border-radius: 16px;
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
-  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.choice-chip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+
+.choice-chip__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.choice-chip__check {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(0.92);
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .choice-chip:hover {
   transform: translateY(-2px);
+  filter: brightness(1.03);
+}
+
+.choice-chip:hover::before {
+  opacity: 1;
+}
+
+.choice-chip:focus-visible {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
+}
+
+.choice-chip.is-priced:not(.is-selected) {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .choice-chip.is-selected {
-  background: linear-gradient(135deg, rgba(255, 76, 178, 0.45), rgba(211, 108, 255, 0.5));
-  border-color: rgba(255, 255, 255, 0.24);
+  background: linear-gradient(135deg, rgba(255, 76, 178, 0.52), rgba(211, 108, 255, 0.58));
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 16px 28px rgba(255, 76, 178, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.choice-chip.is-selected .choice-chip__check {
+  color: #2b083d;
+  background: linear-gradient(135deg, #ffffff, #ffd6f0);
+  border-color: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 18px rgba(255, 255, 255, 0.14);
+  transform: scale(1);
 }
 
 .counter-text,
@@ -542,6 +615,11 @@ button {
   margin-top: 10px;
   font-size: 0.95rem;
   color: rgba(255, 255, 255, 0.74);
+}
+
+.counter-text.is-warning {
+  color: #ffd3e9;
+  font-weight: 700;
 }
 
 .field,
@@ -899,4 +977,37 @@ button {
 
 .pix-note strong {
   color: var(--text-primary, #111827);
+}
+
+
+@media (max-width: 640px) {
+  .product-card {
+    grid-template-columns: 1fr;
+  }
+
+  .product-card__image {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .product-card__body {
+    padding: 16px;
+  }
+
+  .product-card h3 {
+    font-size: 1.55rem;
+    line-height: 1.05;
+  }
+
+  .product-card p {
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 420px) {
+  .product-card__image {
+    aspect-ratio: 4 / 3;
+  }
 }
