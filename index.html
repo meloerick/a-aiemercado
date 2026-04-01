@@ -22,7 +22,7 @@
         <div class="hero__glow"></div>
         <div class="hero__content container">
           <div class="hero__top">
-            <img src="assets/logo.png" alt="Logo Cantinho do Açaí" class="hero__logo" />
+            <img src="logo.png" alt="Logo Cantinho do Açaí" class="hero__logo" />
             <span class="hero__badge">Delivery Premium em Canoas</span>
           </div>
 
@@ -44,11 +44,7 @@
             <aside class="hero__info">
               <article class="info-card">
                 <span class="info-card__label">Horário de funcionamento</span>
-                <strong class="js-store-hours">00:00 às 23:59</strong>
-              </article>
-              <article class="info-card info-card--status">
-                <span class="info-card__label">Status do delivery</span>
-                <strong id="storeStatusText">Aberto agora</strong>
+                <strong>08:30 às 19:30</strong>
               </article>
               <article class="info-card">
                 <span class="info-card__label">WhatsApp</span>
@@ -86,13 +82,13 @@
               <p class="eyebrow">Localização</p>
               <h2>Estamos prontos para te atender</h2>
               <p class="location-copy">
-                Av. Esperança, 1501 - Guajuviras, Canoas - RS, 92440-565. Atendimento todos os dias com envio
+                Avenida Esperança, 1501, Guajuviras, Canoas/RS. Atendimento todos os dias com envio
                 rápido e cardápio completo.
               </p>
               <div class="location-actions">
                 <a
                   class="btn btn--ghost"
-                  href="https://www.google.com/maps/place/CANTINHO+DO+A%C3%87AI+E+MERCADO/@-29.8895703,-51.1406155,20.25z/data=!4m15!1m8!3m7!1s0x95196fd458ed1435:0x186b367b4c4719e7!2sAv.+Esperan%C3%A7a,+1490+-+Guajuviras,+Canoas+-+RS,+92440-565!3b1!8m2!3d-29.8896556!4d-51.1403297!16s%2Fg%2F11jzh8918l!3m5!1s0x95196f9593fdc39d:0xdb579521e92e3cef!8m2!3d-29.8894012!4d-51.1402881!16s%2Fg%2F11m_6ws4l0?entry=ttu&g_ep=EgoyMDI2MDMzMC4wIKXMDSoASAFQAw%3D%3D"
+                  href="https://www.google.com/maps/search/?api=1&query=Avenida+Esperan%C3%A7a,+1501,+Guajuviras,+Canoas,+RS"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -106,7 +102,7 @@
                 loading="lazy"
                 allowfullscreen
                 referrerpolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps?q=Av.%20Esperan%C3%A7a%2C%201501%20-%20Guajuviras%2C%20Canoas%20-%20RS%2C%2092440-565&z=19&output=embed"
+                src="https://www.google.com/maps?q=Avenida%20Esperan%C3%A7a%2C%201501%2C%20Guajuviras%2C%20Canoas%2C%20RS&output=embed"
               ></iframe>
             </div>
           </div>
@@ -117,7 +113,7 @@
         <div class="container footer__grid">
           <div>
             <h3>Cantinho do Açaí</h3>
-            <p>Av. Esperança, 1501 - Guajuviras, Canoas - RS, 92440-565</p>
+            <p>Avenida Esperança, 1501, Guajuviras, Canoas/RS</p>
           </div>
           <div>
             <h4>Contato</h4>
@@ -126,7 +122,7 @@
           </div>
           <div>
             <h4>Funcionamento</h4>
-            <p>Todos os dias: <span class="js-store-hours">00:00 às 23:59</span></p>
+            <p>Todos os dias: 08:30 às 19:30</p>
           </div>
         </div>
       </footer>
@@ -192,19 +188,16 @@
               <div class="field-grid field-grid--2">
                 <label class="field">
                   <span>Forma de pagamento*</span>
-                  <input type="text" value="Pix" readonly />
-                  <input type="hidden" name="pagamento" value="Pix" />
+                  <select name="pagamento" required>
+                    <option value="Pix" selected>Pix</option>
+                  </select>
                 </label>
                 <label class="field">
                   <span>Chave Pix</span>
                   <input type="text" value="58137537000188" readonly />
                 </label>
               </div>
-
-              <div class="pix-notice">
-                <strong>Pague para este Pix:</strong>
-                <span>58137537000188</span>
-              </div>
+              <p class="pix-note">Pague para este Pix: <strong>58137537000188</strong></p>
 
               <label class="field">
                 <span>Observações do pedido</span>
